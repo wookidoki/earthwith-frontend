@@ -5,8 +5,17 @@ import {
   ArrowRight, PlusSquare, Hash, Activity, ThumbsUp
 } from 'lucide-react';
 import { useAuth } from '../auth/authContext/AuthorContext.jsx';
+import axios from 'axios'; // 윤기
 
 //C:\Kdt_edu_leeseongwook\semi-project\src\assets\auth\authContext\AuthorContext.jsx
+
+
+
+
+
+
+
+
 
 // src/assets/feed/EcoFeedPage.jsx
 const EcoFeedPage = () => {
@@ -15,8 +24,132 @@ const EcoFeedPage = () => {
 
   const [filter, setFilter] = useState('all'); // 'all', 'popular', 'recruit'
   const [loading, setLoading] = useState(false);
+  const [feedData, setFeedData] = useState([]);
+const [lastBoardNo, setLastBoardNo] = useState(null); // fetchOffset용
+const [hasMore, setHasMore] = useState(true);
+const LIMIT = 3;
+const [todayParticipants, setTodayParticipants] = useState(0);
+
+// 윤기 useState 오늘의 새글
+const [todayPost, setTodayPost] = useState(0);
+
+const mapDtoToPost = (dto) => {
+
+  const categoryLabel = `#${dto.boardCategory} ${dto.categoryName}`;
+
+  return {
+    id: dto.boardNo,
+    category: categoryLabel,
+    title: dto.boardTitle,
+    content: dto.boardContent,
+    imageUrl: dto.attachmentPath ? `http://localhost:8081${dto.attachmentPath}` : null,
+
+    boardCategory: dto.boardCategory, // 참여모집 'C' 게시글만 조회하기용 
+
+    memberId: dto.memberId,
+    regionName: dto.regionName,
+    regDate: dto.regDate,
+
+    tags: [ `#${dto.categoryName}`], //임시태그
+    likes: dto.likeCount ?? 0,
+    comments: 0,
+    participants: 0,
+    maxParticipants: 0,
+    isLiked: false,
+    isCommentOpen: false,
+    commentsList: [],
+    newCommentText: '',
+  };
+};
+
+const fetchFeeds = async (reset = false) => {
+  if (loading) return;
+  if (!reset && !hasMore) return;
+
+  try {
+    setLoading(true);
+
+    const params = {
+      category: filter === 'recruit' ? 'C2' : 'C',      // C1~C5 전체
+      limit: LIMIT,
+    };
+
+    if (!reset && lastBoardNo !== null) {
+      params.fetchOffset = lastBoardNo;
+    }
+
+    const res = await axios.get('http://localhost:8081/api/boards/feed', {
+      params,
+    });
+
+    const dtoList = res.data; // 배열
+    const newPosts = dtoList.map(mapDtoToPost);
+
+    setFeedData(prev =>
+      reset ? newPosts : [...prev, ...newPosts]
+    );
+
+    // 더 가져올 게 없으면 hasMore=false
+    if (newPosts.length < LIMIT) {
+      setHasMore(false);
+    }
+
+    // 다음 fetchOffset용 boardNo 저장
+    if (dtoList.length > 0) {
+      const lastDto = dtoList[dtoList.length - 1];
+      setLastBoardNo(lastDto.boardNo);
+    }
+  } catch (e) {
+    console.error('피드 조회 실패:', e);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  // 맨 처음 로딩 시 0페이지 역할
+  setHasMore(true);
+  setLastBoardNo(null);
+  fetchFeeds(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [filter]);
+
+// ⭐⭐⭐ 오늘의 참여자 수 로딩 useEffect (여기다가 넣으면 됨)
+  useEffect(() => {
+    const todayParticipants = async () => {
+      try {
+        const res = await axios.get(
+          'http://localhost:8081/api/boards/stats/today',
+          { params: { category: 'C2' } }
+        );
+        setTodayParticipants(res.data.todayParticipants);
+      } catch (e) {
+        console.error('오늘 참여자 수 조회 실패:', e);
+      }
+    };
+
+    todayParticipants();
+  }, []);
+
+  useEffect(() => {
+    const todayPost = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8081/api/boards/stats/todayPost`,
+          { params : { category: 'C%' } }
+        );
+        console.log('todayPost 응답:', res.data);
+        setTodayPost(res.data.todayPost);
+      } catch (e) {
+        console.error('오늘 새글 수 조회 실패:', e);
+      }
+    };
+    
+    todayPost();
+  }, []);
 
   // 임시 피드 데이터 (초기 상태)
+  /*
   const initialFeedData = [
     {
       id: 1,
@@ -52,16 +185,22 @@ const EcoFeedPage = () => {
       newCommentText: '',
     },
   ];
+*/
+
 
   // TODO: (AXIOS) useEffect(() => { ... }, []) - 컴포넌트 마운트 시 피드 목록(initialFeedData)을 API로 가져옵니다.
-  const [feedData, setFeedData] = useState(initialFeedData);
+  //const [feedData, setFeedData] = useState(initialFeedData);
 
   // --- 이벤트 핸들러 ---
 
   // 좋아요 토글 핸들러
-  const handleLikeToggle = (postId) => {
+  const handleLikeToggle = async (postId) => {
     // TODO: (AXIOS) 백엔드 API 호출 (좋아요 상태 전송)
     // 예: await api.post(`/api/feed/${postId}/like`);
+    if (!currentUser) {
+      alert('로그인 후 이용 가능합니다.');
+      return;
+    }
 
     setFeedData(prevFeed =>
       prevFeed.map(post => {
@@ -72,6 +211,40 @@ const EcoFeedPage = () => {
         return post;
       })
     );
+
+    try {
+
+      const response = await axios.post(
+        `http://localhost:8081/api/boards/${postId}/like`,
+        {
+          memberId: currentUser.memberId,
+        }
+      );
+
+      const { isLiked, likeCount } = response.data;
+
+      setFeedData(prevFeed => 
+        prevFeed.map(post => 
+          post.id === postId 
+          ? { ...post, isLiked, likes: likeCount } 
+          : post 
+        )
+      );
+    } catch (e) {
+      console.error('좋아요 실패:', e);
+
+      setFeedData(prevFeed =>
+      prevFeed.map(post => {
+        if (post.id === postId) {
+          const newLikes = post.isLiked ? post.likes - 1 : post.likes + 1;
+          return { ...post, isLiked: !post.isLiked, likes: newLikes };
+        }
+        return post;
+      })
+    );
+    alert('좋아요 처리 중 오류가 발생했습니다.');
+  }
+
   };
 
   // 댓글창 토글 핸들러
@@ -125,48 +298,26 @@ const EcoFeedPage = () => {
 
   // --- 무한 스크롤 ---
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop + 1 >= document.documentElement.scrollHeight && !loading) {
-        setLoading(true);
-        
-        // TODO: (AXIOS) 백엔드 API를 호출하여 다음 페이지 데이터를 가져옵니다.
-        // 예: const nextPageData = await api.get(`/api/feed?page=${currentPage + 1}&filter=${filter}`);
-        // setFeedData(prev => [...prev, ...nextPageData.data]);
-        // setCurrentPage(prev => prev + 1);
+  const handleScroll = () => {
+    const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
 
-        // 지금은 1.5초 후 임시 데이터를 추가하는 시뮬레이션
-        setTimeout(() => {
-          const newPostId = feedData.length + 1;
-          const newPosts = [
-            {
-              id: newPostId,
-              category: '#C1 인증',
-              title: `새로 로드된 피드 ${newPostId}`,
-              content: '무한 스크롤로 새로 로드된 데이터입니다. 디자인 테스트용입니다.',
-              imageUrl: 'https://placehold.co/600x300/f0a0a0/333?text=New+Post',
-              tags: ['#무한스크롤', '#테스트'],
-              likes: 10,
-              comments: 0,
-              isLiked: false,
-              isCommentOpen: false,
-              commentsList: [],
-              newCommentText: '',
-            }
-          ];
-          setFeedData(prevData => [...prevData, ...newPosts]);
-          setLoading(false);
-        }, 1500);
-      }
-    };
+    // 바닥에서 200px 남았을 때
+    const isNearBottom = scrollHeight - (scrollTop + clientHeight) < 200;
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, feedData]); // 6. filter 변경 시 effect 재실행 (필터링된 상태에서 스크롤 시)
+    if (isNearBottom && !loading && hasMore) {
+      // ✅ 더미 setTimeout 대신 실제 API 호출
+      fetchFeeds(false);
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll);
+  return () => window.removeEventListener('scroll', handleScroll);
+}, [loading, hasMore, lastBoardNo]); // 6. filter 변경 시 effect 재실행 (필터링된 상태에서 스크롤 시)
 
   // 필터링된 데이터 (이제 state인 feedData를 사용)
   const filteredFeed = feedData.filter(post => {
-    if (filter === 'popular') return post.likes > 100;
-    if (filter === 'recruit') return post.category === '#C2 참여';
+    if (filter === 'popular') return post.likes >= 2;
+    if (filter === 'recruit') return post.boardCategory === 'C2';
     return true; // 'all'
   });
 
@@ -218,12 +369,12 @@ const EcoFeedPage = () => {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700">진행중인 모집</span>
-                  <span className="text-sm font-bold text-emerald-600">12 건</span>
+                  <span className="text-sm text-gray-700">오늘의 새글</span>
+                  <span className="text-sm font-bold text-emerald-600">{todayPost} 건</span>
                 </div>
                   <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700">오늘의 참여</span>
-                  <span className="text-sm font-bold text-emerald-600">45 명</span>
+                  <span className="text-sm font-bold text-emerald-600">{todayParticipants} 명</span>
                 </div>
               </div>
             </div>
@@ -274,6 +425,17 @@ const EcoFeedPage = () => {
                 <span className={`px-3 py-1 text-xs font-bold rounded-full ${getCategoryStyle(post.category)}`}>
                   {post.category.substring(3)}
                 </span>
+                <div className="flex">
+                <div className="text-base text-gray-700 mb-1">
+                  {post.memberId}  
+                  </div>
+                  <div className="text-xs text-gray-700 mb-1">
+                  {post.regionName}
+                  </div>
+                  <div className="text-xs text-gray-700 mb-1">
+                  {post.regDate}
+                  </div>
+                  </div>
               </div>
 
               {/* 텍스트 영역 */}
@@ -282,9 +444,10 @@ const EcoFeedPage = () => {
             </div>
 
             {/* 이미지 영역 */}
+            {console.log('imageUrl:', post.imageUrl)}
             {post.imageUrl && (
               <div className="w-full bg-gray-200">
-                <img src={post.imageUrl} alt={post.title} className="w-full h-auto object-cover" />
+                <img src={post.imageUrl} alt={post.title} className="w-full h-auto object-cover rounded-xl" />
               </div>
             )}
 
@@ -297,29 +460,8 @@ const EcoFeedPage = () => {
                   </span>
                 ))}
               </div>
-
-              {/* 참여하기 버튼 (조건부 렌더링) */}
-              {post.category === '#C2 참여' && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center mb-4">
-                  <div>
-                    <div className="flex items-center space-x-2 text-emerald-700">
-                      <Users className="w-5 h-5" />
-                      <span className="text-sm font-medium">
-                        참여 현황: {post.participants} / {post.maxParticipants} 명
-                      </span>
-                    </div>
-                    <div className="w-full bg-emerald-200 rounded-full h-1.5 mt-2">
-                      <div
-                        className="bg-emerald-500 h-1.5 rounded-full"
-                        style={{ width: `${(post.participants / post.maxParticipants) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <button className="w-full md:w-auto mt-3 md:mt-0 md:ml-4 px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-all">
-                    참여하기
-                  </button>
-                </div>
-              )}
+                
+                
 
               {/* 하단 버튼 영역 */}
               <div className="flex justify-between items-center border-t border-gray-200 pt-4">
