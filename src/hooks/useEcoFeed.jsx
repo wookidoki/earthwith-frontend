@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext'; // AuthContext 경로 주의
 
+
 const PROFILE_BASE_URL = "http://localhost:8081";
 // 2) 프로필 이미지 URL 정리 함수
 const resolveProfileImageUrl = (raw) => {
