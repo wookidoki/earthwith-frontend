@@ -16,6 +16,9 @@ import BoardEnrollPage from "./pages/BoardEnrollPage";
 import BoardDetail from "./pages/BoardDetail";
 import NewsPage from "./pages/NewsPage";
 import MyProfilePage from "./pages/MyProfilePage";
+import ProfileHeader from "./pages/ProfileHeader";
+
+import UserFeedEditPage from "./pages/UserFeedEditPage";
 import ErrorPage from "./pages/ErrorPage";
 
 // --- Admin Pages ---
@@ -53,9 +56,14 @@ function App() {
         <Route path="/board" element={<BoardPage pageFilter={'ALL'} />} />
         <Route path="/board-filtered" element={<BoardPage pageFilter={'A'} />} />
         <Route path="/board-detail/:id" element={<BoardDetail />} />
+
+        <Route path="/admin-enroll" element={<BoardEnrollPage onNavigate={handleNavigate} isAdmin={true} />} /> 
+        <Route path="/feed-edit/:id" element={<UserFeedEditPage />} />
+
         
         {/* 글 작성 페이지 */}
         <Route path="/board-enroll" element={<BoardEnrollPage />} /> 
+
         
         {/* Profile */}
         <Route path="/myprofile" element={<MyProfilePage />} />
