@@ -16,6 +16,7 @@ import BoardEnrollPage from "./pages/BoardEnrollPage";
 import BoardDetail from "./pages/BoardDetail";
 import NewsPage from "./pages/NewsPage";
 import MyProfilePage from "./pages/MyProfilePage";
+import ProfileHeader from "./pages/ProfileHeader";
 
 import UserFeedEditPage from "./pages/UserFeedEditPage";
 import ErrorPage from "./pages/ErrorPage";
