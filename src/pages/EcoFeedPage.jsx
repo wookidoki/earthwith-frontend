@@ -8,7 +8,12 @@ import { useEcoFeed } from '../hooks/useEcoFeed'; // Hook Import
 const EcoFeedPage = () => {
   const navigate = useNavigate();
   const { 
-    filteredFeed, filter, setFilter, loading, handlers 
+    filteredFeed, 
+    filter, 
+    setFilter, 
+    loading, 
+    handlers, 
+    isLoggedIn, 
   } = useEcoFeed();
 
   const {
@@ -27,7 +32,10 @@ const EcoFeedPage = () => {
   handleCommentReportSubmit,
 } = handlers;
 
-// 🔥 실시간 통계 상태
+// 로그인 여부
+// const isLoggedIn = !!currentUserId;
+
+// 실시간 통계 상태
   const [stats, setStats] = useState({
     todayParticipants: 0, // 오늘의 참여
     todayPost: 0,         // 오늘의 새 글
@@ -74,13 +82,13 @@ const [deleteModal, setDeleteModal] = React.useState({
   commentId: null
 });
 
-// 🔥 게시글 삭제 모달
+// 게시글 삭제 모달
 const [postDeleteModal, setPostDeleteModal] = React.useState({
   open: false,
   postId: null,
 });
 
-// 🔥 신고 모달 상태
+// 신고 모달 상태
 const [reportModal, setReportModal] = useState({
   open: false,
   postId: null,
@@ -99,7 +107,7 @@ const REPORT_REASONS = [
   { id: 5, label: '기타' },
 ];
 
-// 🔥 댓글 신고 모달 상태
+// 댓글 신고 모달 상태
 const [commentReportModal, setCommentReportModal] = useState({
   open: false,
   commentId: null,
@@ -157,6 +165,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
       </div>
       
       {/* 글쓰기 버튼 */}
+      {isLoggedIn && (
       <button
         onClick={() => navigate('/user-enroll')}
         className="fixed bottom-28 right-6 md:right-10 z-40 flex items-center space-x-2 bg-emerald-600 text-white px-5 py-3 rounded-full font-bold hover:bg-emerald-700 transition-all shadow-xl"
@@ -164,6 +173,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
         <PlusSquare className="w-5 h-5" />
         <span className="hidden md:inline">글쓰기</span>
       </button>
+      )}
 
       {/* 필터 탭 */}
       <div className="sticky top-20 bg-white/80 backdrop-blur-md z-30 border-b border-gray-100">
@@ -191,7 +201,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
                 </span>
               </div>
 
-              {/* 🔥 프로필 + 작성자 / 지역 / 날짜 */}
+              {/* 프로필 + 작성자 / 지역 / 날짜 */}
               <div className="flex items-center gap-3 mb-3">
                 {/* 동그란 프로필 이미지 */}
                 <img
@@ -221,7 +231,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
     {post.title}
   </h3>
 
-  {/* 🔥 본인 글일 때만 X 버튼 보이게 (currentUserId == post.author) */}
+  {/* 본인 글일 때만 X 버튼 보이게 (currentUserId == post.author) */}
   {String(currentUserId) === String(post.author) && (
     <button
       onClick={() => setPostDeleteModal({ open: true, postId: post.id })}
@@ -253,8 +263,9 @@ const [commentReportContent, setCommentReportContent] = useState("");
                   <span key={index} className="text-sm text-emerald-600 font-medium cursor-pointer hover:underline">{tag}</span>
                 ))}
               </div>
-
-              {post.categoryCode === 'C2' && (
+              
+              
+              {/* {post.categoryCode === 'C2' && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center mb-4">
                   <div>
                     <div className="flex items-center space-x-2 text-emerald-700">
@@ -267,7 +278,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
                   </div>
                   <button className="w-full md:w-auto mt-3 md:mt-0 md:ml-4 px-6 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 transition-all">참여하기</button>
                 </div>
-              )}
+              )} */}
 
               <div className="flex justify-between items-center border-t border-gray-200 pt-4">
                 <div className="flex space-x-5">
@@ -291,12 +302,12 @@ const [commentReportContent, setCommentReportContent] = useState("");
                   <button onClick={() => handleCommentToggle(post.id)} className={`flex items-center space-x-1.5 transition-colors ${post.isCommentOpen ? 'text-blue-500' : 'text-gray-500 hover:text-blue-500'}`}>
                     <MessageCircle className="w-5 h-5" /> <span className="text-sm font-medium">{post.comments}</span>
                   </button>
-                   {/* 🔥 본인 게시글일 때만 연필 아이콘 표시 */}
+                   {/* 본인 게시글일 때만 연필 아이콘 표시 */}
                     {String(currentUserId) === String(post.author) && (
                       <button
                       onClick={() =>
                         navigate(`/feed-edit/${post.id}`, {
-                          state: { post },   // 🔥 이걸 추가
+                          state: { post },  
                         })
                       }
                       className="flex items-center text-gray-500 hover:text-emerald-600 transition-colors"
@@ -305,7 +316,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
                     </button>
                     )}
 
-                    {/* 🔥 신고 (사이렌) – 로그인 O && 본인 글이 아닐 때만 */}
+                    {/* 신고 (사이렌) – 로그인 O && 본인 글이 아닐 때만 */}
                     {currentUserId && String(currentUserNo) !== String(post.boardAuthor) && (
                     <button
                       onClick={() =>
@@ -363,7 +374,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
                   {String(currentUserId) === String(comment.user) && (
                 <div className="flex items-center space-x-1">
 
-                  {/* 🔥 사이렌 (신고) */}
+                  {/* 사이렌 (신고) */}
                 <button
                   onClick={() =>
                     setCommentReportModal({
@@ -377,7 +388,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
                   <AlertTriangle className="w-4 h-4" />
                 </button>
                   
-                  {/* 🔥 연필 (수정) */}
+                  {/* 연필 (수정) */}
                   <button
                     onClick={() => handleCommentEditInit(post.id, comment.id)}
                     className="text-gray-400 hover:text-emerald-600 transition"
@@ -416,7 +427,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
   />
 
-  {/* 🔥 수정 취소 버튼 (수정 중일 때만) */}
+  {/* 수정 취소 버튼 (수정 중일 때만) */}
   {post.editingCommentId && (
     <button
       onClick={() => handleCommentEditCancel(post.id)}
@@ -479,7 +490,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
   </div>
 )}
 
-{/* 🔥 게시글 삭제 모달 */}
+{/* 게시글 삭제 모달 */}
 {postDeleteModal.open && (
   <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
     <div className="bg-white shadow-xl rounded-2xl p-6 w-80 animate-fadeIn">
@@ -513,7 +524,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
   </div>
 )}
 
-{/* 🔥 여기 "신고 모달" 추가 */}
+{/* 여기 "신고 모달" 추가 */}
 
 {reportModal.open && (
   <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
@@ -576,7 +587,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
 
         <button
           onClick={async () => {
-            // 🔥 신고 제출 핸들러 (useEcoFeed 안에 handleReportSubmit 만들어둔 상태여야 함)
+            // 신고 제출 핸들러 (useEcoFeed 안에 handleReportSubmit 만들어둔 상태여야 함)
             if (!reportReason) {
               alert('신고 사유를 선택해주세요.');
               return;
@@ -599,7 +610,7 @@ const [commentReportContent, setCommentReportContent] = useState("");
   </div>
 )}
 
-{/* 🔥 댓글 신고 모달 */}
+{/* 댓글 신고 모달 */}
 {commentReportModal.open && (
   <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
     <div className="bg-white shadow-xl rounded-2xl p-6 w-[360px] max-w-[90%] animate-fadeIn">

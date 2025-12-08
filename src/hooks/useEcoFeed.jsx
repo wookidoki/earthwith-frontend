@@ -30,7 +30,8 @@ export const useEcoFeed = () => {
   const [feedData, setFeedData] = useState([]);    // 실제 피드 게시글을 저장할 배열
   const [fetchOffset, setFetchOffset] = useState(null);      // 마지막 글 id // 마지막으로 불러온 글의 id를 저장한다. 다음 페이지를 요청할 때 기준점으로 사용.
   const [hasMore, setHasMore] = useState(true);     // 더 불러올 글이 있는지 // 마지막으로 불러온 글의 id를 저장한다. 다음 페이지를 요청할 때 기준점으로 사용.
-  
+  const isLoggedIn = !!(currentUser || localStorage.getItem('accessToken')); // 로그인 여부
+
   const fetchFeeds = useCallback (
   async (isFirst = false) => {
 
@@ -73,7 +74,7 @@ export const useEcoFeed = () => {
   categoryCode: post.boardCategory,
   categoryText: post.categoryName || '',
 
-  // 🔙 단일 이미지만 사용
+  // 단일 이미지만 사용
   imageUrl: post.attachmentPath || null,
 
   author: post.memberId,
@@ -337,7 +338,7 @@ const handleCommentToggle = (postId) => {
 
   const body = isEdit
     ? JSON.stringify({
-        commentContent: content,         // 🔥 수정할 내용만 보내기
+        commentContent: content,         // 수정할 내용만 보내기
       })
     : JSON.stringify({
         refBno: postId,                  // 게시글 번호
@@ -433,7 +434,7 @@ const handleCommentDelete = async (postId, commentId) => {
   }
 };
 
-// 🔥 게시글 삭제 (백엔드 연동)
+// 게시글 삭제 (백엔드 연동)
 const handlePostDelete = async (postId) => {
   const token = localStorage.getItem("accessToken");
   if (!token) {
@@ -454,7 +455,7 @@ const handlePostDelete = async (postId) => {
       return;
     }
 
-    // 🔥 프론트 목록에서 해당 게시글 제거
+    // 프론트 목록에서 해당 게시글 제거
     setFeedData((prev) => prev.filter((post) => post.id === undefined ? true : post.id !== postId));
   } catch (e) {
     console.error("게시글 삭제 에러:", e);
@@ -580,43 +581,6 @@ const handleCommentEditCancel = (postId) => {
   );
 };
 
-
-
-
-  /*
-  // 무한 스크롤 시뮬레이션
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop + 1 >= document.documentElement.scrollHeight && !loading) {
-        setLoading(true);
-        setTimeout(() => {
-          const newPostId = feedData.length + 1;
-          const newPosts = [
-            {
-              id: newPostId,
-              category: '#C1 인증',
-              title: `새로 로드된 피드 ${newPostId}`,
-              content: '무한 스크롤 테스트 데이터입니다.',
-              imageUrl: 'https://placehold.co/600x300/f0a0a0/333?text=New+Post',
-              tags: ['#무한스크롤', '#테스트'],
-              likes: 10,
-              comments: 0,
-              isLiked: false,
-              isCommentOpen: false,
-              commentsList: [],
-              newCommentText: '',
-            }
-          ];
-          setFeedData(prevData => [...prevData, ...newPosts]);
-          setLoading(false);
-        }, 1500);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, feedData]);*/
-
   // 필터링된 데이터 반환
   const filteredFeed = feedData.filter(post => {
     if (filter === 'popular') return Number(post.likes) >= 100;
@@ -624,13 +588,12 @@ const handleCommentEditCancel = (postId) => {
     return true;
   });
 
- 
-
   return {
     filteredFeed,
     filter,
     setFilter,
     loading,
+    isLoggedIn,
     handlers: {
       handleLikeToggle,
     handleCommentToggle,
