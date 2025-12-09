@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Lock, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AccountSettings = ({ currentUser }) => {
   const [activeSection, setActiveSection] = useState('profile');
@@ -13,6 +14,9 @@ const AccountSettings = ({ currentUser }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+   //  회원 탈퇴용 비밀번호
+  const [deletePassword, setDeletePassword] = useState('');
 
   // ⭐ 이메일 변경
   const handleEmailUpdate = async () => {
@@ -101,8 +105,8 @@ const AccountSettings = ({ currentUser }) => {
       return;
     }
 
-    if (newPassword.length < 8) {
-      alert('비밀번호는 최소 8자 이상이어야 합니다.');
+    if (newPassword.length < 6) {
+      alert('비밀번호는 최소 6자 이상이어야 합니다.');
       return;
     }
 
@@ -136,26 +140,36 @@ const AccountSettings = ({ currentUser }) => {
   };
 
   const handleAccountDelete = async () => {
+    // 비밀번호 입력 확인
+    if (!deletePassword) {
+      alert('비밀번호를 입력해주세요.');
+      return;
+    }
+
     if (!window.confirm('정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
       return;
     }
 
     try {
-      const memberNo = localStorage.getItem('memberNo');
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`http://localhost:8081/members/${memberNo}`, {
+      const response = await fetch(`http://localhost:8081/members`, {
         method: 'DELETE',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({
+          memberPwd: deletePassword
+        })
       });
 
       if (response.ok) {
         alert('계정이 삭제되었습니다.');
         localStorage.clear();
-        window.location.href = '/';
+        navigate('/');
       } else {
-        alert('계정 삭제에 실패했습니다.');
+        const errorText = await response.text();
+        alert(`계정 삭제 실패: ${errorText}`);
       }
     } catch (error) {
       console.error('계정 삭제 실패:', error);
@@ -308,6 +322,20 @@ const AccountSettings = ({ currentUser }) => {
                   <p className="text-sm text-red-700 mb-4">
                     계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
                   </p>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-red-900 mb-2">
+                      비밀번호 확인
+                    </label>
+                    <input 
+                      type="password" 
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      placeholder="비밀번호를 입력하세요"
+                      className="w-full px-4 py-2.5 rounded-lg border-2 border-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                    />
+                  </div>
+
                   <button 
                     onClick={handleAccountDelete}
                     className="px-6 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-all shadow-sm">
