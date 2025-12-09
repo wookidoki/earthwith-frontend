@@ -43,15 +43,23 @@ export const useEcoFeed = () => {
       setLoading(true); // 요청 시작 -> 로딩 중 표시
       
       const params = new URLSearchParams();
-      params.append('limit', '3');
+      params.append('limit', '10');
 
       if (!isFirst && fetchOffset != null) {
         params.append('fetchOffset', fetchOffset.toString());
       }
 
-      const res = await fetch(`http://localhost:8081/feeds?${params.toString()}`, {
+      const url =
+        filter === 'popular'
+          ? `http://localhost:8081/feeds/popular?${params.toString()}`
+          : `http://localhost:8081/feeds?${params.toString()}`;
+      // const basePath = filter === 'popular' ? '/feeds/popular' : '/feeds'; // 인기글 필터 위함
+      const res = await fetch(url, {
         method: 'GET',
       });
+      // const res = await fetch(`http://localhost:8081/feeds?${params.toString()}`, {
+      //   method: 'GET',
+      // });
 
       if(!res.ok) {
         console.error('피드 불러오기 실패:', res.status);
@@ -103,6 +111,11 @@ export const useEcoFeed = () => {
   editingCommentId: null,
 })); // 서버에서 온 각 게시글에 isLiked, isCommentOpen, commentsList, newCommentText 같은
               // 프론트 전용 필드를 붙여준다.
+
+              console.log('✅ processed 결과:', processed.map(p => ({
+  id: p.id,
+  likes: p.likes,
+})));
     
       setFeedData(prev => {
         if (isFirst) return processed;
@@ -131,14 +144,20 @@ export const useEcoFeed = () => {
       setLoading(false);
     }
   },
-  [loading, hasMore, fetchOffset]
+  [loading, hasMore, fetchOffset, filter]
  ); // try/catch/finally 구조로 네트워크 에러 처리
      // 어떤 경우든 마지막에 loading=false 로 돌려놓는다.
      // 여기까지가 fetchFeeds 함수 한 세트다.
      
      useEffect(() => {
-      fetchFeeds(true);
-     }, []);
+  setFeedData([]);
+  setFetchOffset(null);
+  setHasMore(true);
+  fetchFeeds(true);
+}, [filter]);
+    //  useEffect(() => {
+    //   fetchFeeds(true);
+    //  }, []);
      // 컴포넌트가 처음 렌더링 될 때 fetchFeeds(true) 호출 -> 첫 3개 글 로드
 
      useEffect(() => {
@@ -589,12 +608,13 @@ const handleCommentEditCancel = (postId) => {
 
   // 필터링된 데이터 반환
   const filteredFeed = feedData.filter(post => {
-    if (filter === 'popular') return Number(post.likes) >= 100;
+    // if (filter === 'popular') return Number(post.likes) >= 100;
     if (filter === 'recruit') return post.categoryCode === 'C2';
     return true;
   });
 
   return {
+    feedData,
     filteredFeed,
     filter,
     setFilter,

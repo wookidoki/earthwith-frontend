@@ -45,11 +45,12 @@ const EcoFeedPage = () => {
     const fetchStats = async () => {
       try {
         // 필요한 카테고리 코드 (예: 참여모집이 C2라면 C2 사용)
-        const category = 'C2';
+        const todayParticipantsCategory = 'C2';
+        const todayPostCategory = 'C%';
 
         const [resParticipants, resPost] = await Promise.all([
-          fetch(`http://localhost:8081/stats/today?category=${category}`),
-          fetch(`http://localhost:8081/stats/todayPost?category=${category}`),
+          fetch(`http://localhost:8081/stats/today?category=${todayParticipantsCategory}`),
+          fetch(`http://localhost:8081/stats/todayPost?category=${encodeURIComponent(todayPostCategory)}`),
         ]);
 
         if (!resParticipants.ok) {
