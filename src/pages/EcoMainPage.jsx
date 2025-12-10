@@ -61,6 +61,7 @@ const guideList = [
           loading={statsLoading}
           error={statsError}
         />
+
         <RankingWidget isLoggedIn={isLoggedIn} />
 
         <CalculatorWidget />
