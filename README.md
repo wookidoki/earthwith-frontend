@@ -1,18 +1,37 @@
-# React + Vite
+# EarthWith Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+환경 보호 커뮤니티 플랫폼 프론트엔드
 
-Currently, two official plugins are available:
+## 기술 스택
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React 18
+- Vite
+- Tailwind CSS
+- Axios
 
-## React Compiler
+## 주요 기능
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+- 로그인/회원가입
+- 게시판
+- 에코 피드
+- 뉴스
+- 탄소 계산기
+- 랭킹 시스템
+- 관리자 페이지
 
-Note: This will impact Vite dev & build performances.
+## 실행 방법
 
-## Expanding the ESLint configuration
+```bash
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 빌드
+
+```bash
+npm run build
+```
+
+## 관련 저장소
+
+- Backend: [earthwith-backend](https://github.com/wookidoki/earthwith-backend)
